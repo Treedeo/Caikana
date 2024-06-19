@@ -123,64 +123,32 @@
                 return;
             }
             
-            Html5Qrcode.getCameras().then(devices => {
-                if (devices && devices.length) {
-                    console.log("Available devices: ", devices);
+            // Укажите здесь конкретный deviceId для задней камеры
+            let selectedDeviceId = "EC2405C2D848E270E56D3D9660137907BB5EC5C4"; // Замените на ваш ID
 
-                    // Проверяем наличие камер в определенном порядке
-                    let preferredCameras = [
-                        'builtInTripleCamera',
-                        'builtInDualWideCamera',
-                        'builtInDualCamera',
-                        'builtInWideAngleCamera'
-                    ];
-
-                    let backCamera = devices.find(device => 
-                        preferredCameras.includes(device.label)
-                    );
-
-                    if (!backCamera) {
-                        backCamera = devices.find(device => device.label.toLowerCase().includes('back') 
-                                                             || device.label.toLowerCase().includes('rear'));
-                    }
-
-                    if (!backCamera) {
-                        console.error('No back camera found.');
-                        alert('No back camera found.');
-                        return;
-                    }
-
-                    console.log("Starting camera with ID: ", backCamera.id);
-                    reader.start(
-                        backCamera.id,
-                        {
-                            fps: 10, // Сканирование с частотой 10 кадров в секунду
-                            qrbox: { width: 250, height: 250 }
-                        },
-                        qrCodeMessage => {
-                            qrCodeInput.value = qrCodeMessage;
-                            reader.stop().then(ignore => {
-                                console.log('Scanner stopped');
-                                scanning = false;
-                            }).catch(err => {
-                                console.error('Error stopping the scanner:', err);
-                            });
-                        },
-                        errorMessage => {
-                            console.error('QR Code no longer in front of camera.', errorMessage);
-                        }
-                    ).catch(err => {
-                        console.error('Unable to start the QR scanner.', err);
+            console.log("Starting camera with ID: ", selectedDeviceId);
+            reader.start(
+                selectedDeviceId,
+                {
+                    fps: 10, // Сканирование с частотой 10 кадров в секунду
+                    qrbox: { width: 250, height: 250 }
+                },
+                qrCodeMessage => {
+                    qrCodeInput.value = qrCodeMessage;
+                    reader.stop().then(ignore => {
+                        console.log('Scanner stopped');
+                        scanning = false;
+                    }).catch(err => {
+                        console.error('Error stopping the scanner:', err);
                     });
-                    scanning = true;
-                } else {
-                    console.error('No cameras found.');
-                    alert('No cameras found.');
+                },
+                errorMessage => {
+                    console.error('QR Code no longer in front of camera.', errorMessage);
                 }
-            }).catch(err => {
-                console.error('Error getting cameras:', err);
-                alert('Error getting cameras: ' + err);
+            ).catch(err => {
+                console.error('Unable to start the QR scanner:', err);
             });
+            scanning = true;
         });
     </script>
 </body>
