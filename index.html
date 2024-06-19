@@ -122,51 +122,45 @@
                 });
                 return;
             }
-            
-            Html5Qrcode.getCameras().then(devices => {
-                if (devices && devices.length) {
-                    console.log("Available devices: ", devices);
 
-                    // Выбираем первую камеру, которая не является фронтальной
-                    let backCamera = devices.find(device => device.label.toLowerCase().includes('александр'));
-
-                    if (!backCamera) {
-                        console.error('No back camera found.');
-                        alert('No back camera found.');
-                        return;
-                    }
-
-                    console.log("Starting camera with ID: ", backCamera.id);
-                    reader.start(
-                        { deviceId: { exact: backCamera.id } },
-                        {
-                            fps: 10, // Сканирование с частотой 10 кадров в секунду
-                            qrbox: { width: 250, height: 250 }
-                        },
-                        qrCodeMessage => {
-                            qrCodeInput.value = qrCodeMessage;
-                            reader.stop().then(ignore => {
-                                console.log('Scanner stopped');
-                                scanning = false;
-                            }).catch(err => {
-                                console.error('Error stopping the scanner:', err);
-                            });
-                        },
-                        errorMessage => {
-                            console.error('QR Code no longer in front of camera.', errorMessage);
-                        }
-                    ).catch(err => {
-                        console.error('Unable to start the QR scanner.', err);
-                    });
-
-                    scanning = true;
-                } else {
-                    console.error('No cameras found.');
-                    alert('No cameras found.');
+            // Настройки для выбора задней камеры
+            let constraints = {
+                video: {
+                    facingMode: { exact: "environment" }
                 }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+                let videoTrack = stream.getVideoTracks()[0];
+                let deviceId = videoTrack.getSettings().deviceId;
+                console.log("Starting camera with ID: ", deviceId);
+
+                reader.start(
+                    { deviceId: { exact: deviceId } },
+                    {
+                        fps: 10, // Сканирование с частотой 10 кадров в секунду
+                        qrbox: { width: 250, height: 250 }
+                    },
+                    qrCodeMessage => {
+                        qrCodeInput.value = qrCodeMessage;
+                        reader.stop().then(ignore => {
+                            console.log('Scanner stopped');
+                            scanning = false;
+                        }).catch(err => {
+                            console.error('Error stopping the scanner:', err);
+                        });
+                    },
+                    errorMessage => {
+                        console.error('QR Code no longer in front of camera.', errorMessage);
+                    }
+                ).catch(err => {
+                    console.error('Unable to start the QR scanner.', err);
+                });
+
+                scanning = true;
             }).catch(err => {
-                console.error('Error getting cameras:', err);
-                alert('Error getting cameras: ' + err);
+                console.error('Error accessing camera with constraints:', err);
+                alert('Error accessing camera with constraints: ' + err);
             });
         });
     </script>
