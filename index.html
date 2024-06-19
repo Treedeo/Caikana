@@ -122,20 +122,13 @@
                 });
                 return;
             }
-
+            
             Html5Qrcode.getCameras().then(devices => {
                 if (devices && devices.length) {
                     console.log("Available devices: ", devices);
-                    devices.forEach(device => {
-                        console.log(`Device: ${device.label}, ID: ${device.id}`);
-                    });
 
-                    let backCamera = devices.find(device => {
-                        return device.label.toLowerCase().includes('back') || 
-                               device.label.toLowerCase().includes('rear') || 
-                               device.label.toLowerCase().includes('александр') || 
-                               device.label.toLowerCase().includes('обзора стола');
-                    });
+                    // Выбираем первую камеру, которая не является фронтальной
+                    let backCamera = devices.find(device => device.label.toLowerCase().includes('iphone') && !device.label.toLowerCase().includes('facetime'));
 
                     if (!backCamera) {
                         console.error('No back camera found.');
