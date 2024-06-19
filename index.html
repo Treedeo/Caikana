@@ -129,10 +129,13 @@
                     // Пробуем найти заднюю камеру
                     let backCamera = devices.find(device => device.label.toLowerCase().includes('back')) 
                                      || devices.find(device => device.label.toLowerCase().includes('rear'));
+                    
                     if (!backCamera) {
                         console.error('No back camera found.');
+                        alert('No back camera found.');
                         return;
                     }
+
                     console.log("Starting camera with ID: ", backCamera.id);
                     reader.start(
                         backCamera.id,
@@ -158,9 +161,11 @@
                     scanning = true;
                 } else {
                     console.error('No cameras found.');
+                    alert('No cameras found.');
                 }
             }).catch(err => {
-                console.error('Error getting cameras.', err);
+                console.error('Error getting cameras:', err);
+                alert('Error getting cameras: ' + err);
             });
         });
     </script>
