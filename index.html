@@ -127,17 +127,32 @@
                 if (devices && devices.length) {
                     console.log("Available devices: ", devices);
 
-                    // Выводим все устройства для отладки
-                    devices.forEach(device => {
-                        console.log(`Device label: ${device.label}, Device ID: ${device.id}`);
-                    });
+                    // Проверяем наличие камер в определенном порядке
+                    let preferredCameras = [
+                        'builtInTripleCamera',
+                        'builtInDualWideCamera',
+                        'builtInDualCamera',
+                        'builtInWideAngleCamera'
+                    ];
 
-                    // Попробуем использовать первую доступную камеру, так как 'back' или 'rear' не найдены
-                    let selectedDeviceId = devices[0].id;
+                    let backCamera = devices.find(device => 
+                        preferredCameras.includes(device.label)
+                    );
 
-                    console.log("Starting camera with ID: ", selectedDeviceId);
+                    if (!backCamera) {
+                        backCamera = devices.find(device => device.label.toLowerCase().includes('back') 
+                                                             || device.label.toLowerCase().includes('rear'));
+                    }
+
+                    if (!backCamera) {
+                        console.error('No back camera found.');
+                        alert('No back camera found.');
+                        return;
+                    }
+
+                    console.log("Starting camera with ID: ", backCamera.id);
                     reader.start(
-                        selectedDeviceId,
+                        backCamera.id,
                         {
                             fps: 10, // Сканирование с частотой 10 кадров в секунду
                             qrbox: { width: 250, height: 250 }
