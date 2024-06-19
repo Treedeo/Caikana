@@ -110,14 +110,25 @@
         let qrCodeInput = document.getElementById('qrCode');
         let qrReaderButton = document.getElementById('qr-reader-button');
         let reader = new Html5Qrcode("reader");
+        let scanning = false;
 
         qrReaderButton.addEventListener('click', function() {
+            if (scanning) {
+                reader.stop().then(ignore => {
+                    console.log('Scanner stopped');
+                    scanning = false;
+                }).catch(err => {
+                    console.error('Error stopping the scanner:', err);
+                });
+                return;
+            }
+            
             Html5Qrcode.getCameras().then(devices => {
                 if (devices && devices.length) {
-                    let cameraId = devices[0].id;
-                    console.log("Starting camera with ID: ", cameraId);  // Отладка
+                    let backCamera = devices.find(device => device.label.toLowerCase().includes('back')) || devices[0];
+                    console.log("Starting camera with ID: ", backCamera.id);
                     reader.start(
-                        cameraId,
+                        backCamera.id,
                         {
                             fps: 10, // Сканирование с частотой 10 кадров в секунду
                             qrbox: { width: 250, height: 250 }
@@ -125,7 +136,8 @@
                         qrCodeMessage => {
                             qrCodeInput.value = qrCodeMessage;
                             reader.stop().then(ignore => {
-                                console.log('Scanner stopped');  // Отладка
+                                console.log('Scanner stopped');
+                                scanning = false;
                             }).catch(err => {
                                 console.error('Error stopping the scanner:', err);
                             });
@@ -136,6 +148,7 @@
                     ).catch(err => {
                         console.error('Unable to start the QR scanner.', err);
                     });
+                    scanning = true;
                 } else {
                     console.error('No cameras found.');
                 }
