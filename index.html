@@ -128,7 +128,7 @@
                     console.log("Available devices: ", devices);
 
                     // Выбираем первую камеру, которая не является фронтальной
-                    let backCamera = devices.find(device => !device.label.toLowerCase().includes('front'));
+                    let backCamera = devices.find(device => device.label.toLowerCase().includes('александр'));
 
                     if (!backCamera) {
                         console.error('No back camera found.');
