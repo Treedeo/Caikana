@@ -127,20 +127,19 @@
                 if (devices && devices.length) {
                     console.log("Available devices: ", devices);
 
-                    let deviceIndex = 0;
-
-                    function startNextCamera() {
-                        if (deviceIndex >= devices.length) {
-                            console.error('No valid camera found.');
-                            alert('No valid camera found.');
-                            return;
+                    // Попробуем выбрать камеру с помощью ограничения по facingMode
+                    let constraints = {
+                        video: {
+                            facingMode: { exact: "environment" } // Принудительно выбираем заднюю камеру
                         }
+                    };
 
-                        let device = devices[deviceIndex];
-                        console.log("Trying to start camera with ID: ", device.id);
-
+                    navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+                        let videoTrack = stream.getVideoTracks()[0];
+                        console.log("Starting camera with constraints: ", constraints);
+                        
                         reader.start(
-                            device.id,
+                            { deviceId: { exact: videoTrack.getSettings().deviceId } },
                             {
                                 fps: 10, // Сканирование с частотой 10 кадров в секунду
                                 qrbox: { width: 250, height: 250 }
@@ -155,20 +154,18 @@
                                 });
                             },
                             errorMessage => {
-                                console.error('Unable to start the QR scanner with this camera.', errorMessage);
-                                deviceIndex++;
-                                startNextCamera();
+                                console.error('QR Code no longer in front of camera.', errorMessage);
                             }
                         ).catch(err => {
                             console.error('Unable to start the QR scanner.', err);
-                            deviceIndex++;
-                            startNextCamera();
                         });
 
                         scanning = true;
-                    }
+                    }).catch(err => {
+                        console.error('Error accessing camera with constraints:', err);
+                        alert('Error accessing camera with constraints: ' + err);
+                    });
 
-                    startNextCamera();
                 } else {
                     console.error('No cameras found.');
                     alert('No cameras found.');
