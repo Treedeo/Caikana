@@ -1,1 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        input[type="submit"]:hover {
+            background-color: #218838;
+        }
+        #reader {
+            width: 300px;
+            margin: 0 auto 20px;
+        }
+        #qr-reader-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #qr-reader-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script src="js/html5-qrcode.min.js"></script> <!-- Локальный файл библиотеки -->
+</head>
+<body>
+    <h1>Введите пароль для подтверждения скидки</h1>
+    <form id="qrForm">
+        <label for="qrCode">QR-код:</label>
+        <input type="text" id="qrCode" name="qrCode" readonly><br>
+        <button type="button" id="qr-reader-button">Сканировать QR-код</button>
+        <div id="reader"></div><br>
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password"><br>
+        <input type="submit" value="Подтвердить">
+    </form>
 
+    <script>
+        document.getElementById('qrForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            var qrCode = document.getElementById('qrCode').value;
+            var password = document.getElementById('password').value;
+            
+            fetch('https://yourserver.com/webhook', {  // Замените на ваш URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    qrCode: qrCode,
+                    password: password
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Скидка принята');
+                } else {
+                    alert('Неверный пароль');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+
+        let qrCodeInput = document.getElementById('qrCode');
+        let qrReaderButton = document.getElementById('qr-reader-button');
+        let reader = new Html5Qrcode("reader");
+        let scanning = false;
+
+        qrReaderButton.addEventListener('click', function() {
+            if (scanning) {
+                reader.stop().then(ignore => {
+                    console.log('Scanner stopped');
+                    scanning = false;
+                }).catch(err => {
+                    console.error('Error stopping the scanner:', err);
+                });
+                return;
+            }
+            
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    let backCamera = devices.find(device => device.label.toLowerCase().includes('back')) || devices[0];
+                    console.log("Starting camera with ID: ", backCamera.id);
+                    reader.start(
+                        backCamera.id,
+                        {
+                            fps: 10, // Сканирование с частотой 10 кадров в секунду
+                            qrbox: { width: 250, height: 250 }
+                        },
+                        qrCodeMessage => {
+                            qrCodeInput.value = qrCodeMessage;
+                            reader.stop().then(ignore => {
+                                console.log('Scanner stopped');
+                                scanning = false;
+                            }).catch(err => {
+                                console.error('Error stopping the scanner:', err);
+                            });
+                        },
+                        errorMessage => {
+                            console.error('QR Code no longer in front of camera.', errorMessage);
+                        }
+                    ).catch(err => {
+                        console.error('Unable to start the QR scanner:', err);
+                    });
+                    scanning = true;
+                } else {
+                    console.error('No cameras found.');
+                }
+            }).catch(err => {
+                console.error('Error getting cameras:', err);
+            });
+        });
+    </script>
+</body>
+</html>
