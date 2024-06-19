@@ -47,7 +47,7 @@
             width: 300px;
             margin: 0 auto 20px;
         }
-        #qr-reader-button {
+        #qr-reader-button, #switch-camera-button {
             display: block;
             width: 100%;
             padding: 10px;
@@ -58,8 +58,9 @@
             cursor: pointer;
             border-radius: 5px;
             text-align: center;
+            margin-bottom: 10px;
         }
-        #qr-reader-button:hover {
+        #qr-reader-button:hover, #switch-camera-button:hover {
             background-color: #0056b3;
         }
     </style>
@@ -71,6 +72,7 @@
         <label for="qrCode">QR-код:</label>
         <input type="text" id="qrCode" name="qrCode" readonly><br>
         <button type="button" id="qr-reader-button">Сканировать QR-код</button>
+        <button type="button" id="switch-camera-button">Переключить камеру</button>
         <div id="reader"></div><br>
         <label for="password">Пароль:</label>
         <input type="password" id="password" name="password"><br>
@@ -109,8 +111,11 @@
 
         let qrCodeInput = document.getElementById('qrCode');
         let qrReaderButton = document.getElementById('qr-reader-button');
+        let switchCameraButton = document.getElementById('switch-camera-button');
         let reader = new Html5Qrcode("reader");
         let scanning = false;
+        let currentCameraIndex = 0;
+        let devices = [];
 
         qrReaderButton.addEventListener('click', function() {
             if (scanning) {
@@ -123,43 +128,11 @@
                 return;
             }
             
-            Html5Qrcode.getCameras().then(devices => {
-                if (devices && devices.length) {
+            Html5Qrcode.getCameras().then(deviceInfos => {
+                devices = deviceInfos;
+                if (devices.length) {
                     console.log("Available devices: ", devices);
-
-                    // Выбираем первую камеру, которая не является фронтальной
-                    let backCamera = devices.find(device => device.label.toLowerCase().includes('iphone') && !device.label.toLowerCase().includes('facetime'));
-
-                    if (!backCamera) {
-                        console.error('No back camera found.');
-                        alert('No back camera found.');
-                        return;
-                    }
-
-                    console.log("Starting camera with ID: ", backCamera.id);
-                    reader.start(
-                        { deviceId: { exact: backCamera.id } },
-                        {
-                            fps: 10, // Сканирование с частотой 10 кадров в секунду
-                            qrbox: { width: 250, height: 250 }
-                        },
-                        qrCodeMessage => {
-                            qrCodeInput.value = qrCodeMessage;
-                            reader.stop().then(ignore => {
-                                console.log('Scanner stopped');
-                                scanning = false;
-                            }).catch(err => {
-                                console.error('Error stopping the scanner:', err);
-                            });
-                        },
-                        errorMessage => {
-                            console.error('QR Code no longer in front of camera.', errorMessage);
-                        }
-                    ).catch(err => {
-                        console.error('Unable to start the QR scanner.', err);
-                    });
-
-                    scanning = true;
+                    startCamera(devices[currentCameraIndex]);
                 } else {
                     console.error('No cameras found.');
                     alert('No cameras found.');
@@ -169,6 +142,49 @@
                 alert('Error getting cameras: ' + err);
             });
         });
+
+        switchCameraButton.addEventListener('click', function() {
+            if (devices.length > 1) {
+                currentCameraIndex = (currentCameraIndex + 1) % devices.length;
+                if (scanning) {
+                    reader.stop().then(ignore => {
+                        startCamera(devices[currentCameraIndex]);
+                    }).catch(err => {
+                        console.error('Error stopping the scanner:', err);
+                    });
+                } else {
+                    startCamera(devices[currentCameraIndex]);
+                }
+            } else {
+                alert('No other cameras found.');
+            }
+        });
+
+        function startCamera(device) {
+            console.log("Starting camera with ID: ", device.id);
+            reader.start(
+                { deviceId: { exact: device.id } },
+                {
+                    fps: 10, // Сканирование с частотой 10 кадров в секунду
+                    qrbox: { width: 250, height: 250 }
+                },
+                qrCodeMessage => {
+                    qrCodeInput.value = qrCodeMessage;
+                    reader.stop().then(ignore => {
+                        console.log('Scanner stopped');
+                        scanning = false;
+                    }).catch(err => {
+                        console.error('Error stopping the scanner:', err);
+                    });
+                },
+                errorMessage => {
+                    console.error('QR Code no longer in front of camera.', errorMessage);
+                }
+            ).catch(err => {
+                console.error('Unable to start the QR scanner.', err);
+            });
+            scanning = true;
+        }
     </script>
 </body>
 </html>
